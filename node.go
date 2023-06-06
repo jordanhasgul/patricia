@@ -1,6 +1,9 @@
 package patricia
 
-import "math/bits"
+import (
+	"bytes"
+	"math/bits"
+)
 
 type node[T any] struct {
 	key []byte
@@ -13,15 +16,148 @@ type node[T any] struct {
 }
 
 func (n *node[T]) get(key []byte) (T, bool) {
-	return *new(T), false
+	found := n.getI(key)
+	if !bytes.Equal(found.key, key) {
+		return *new(T), false
+	}
+
+	return found.value, true
+}
+
+func (n *node[T]) getI(key []byte) *node[T] {
+	var (
+		parent = n
+		child  = n.left
+	)
+	for parent.fdb < child.fdb {
+		parent = child
+		if nthBit(key, child.fdb) == 0 {
+			child = child.left
+		} else {
+			child = child.right
+		}
+	}
+
+	return child
 }
 
 func (n *node[T]) put(key []byte, value T) bool {
-	return false
+	found := n.getI(key)
+	if bytes.Equal(found.key, key) {
+		found.value = value
+		return false
+	}
+
+	fdb := firstDifferingBit(found.key, key)
+	new := &node[T]{
+		key: key,
+		fdb: fdb,
+
+		value: value,
+	}
+	n.putI(new)
+
+	return true
+}
+
+func (n *node[T]) putI(new *node[T]) {
+	var (
+		parent = n
+		child  = n.left
+	)
+	for parent.fdb < child.fdb && child.fdb < new.fdb {
+		parent = child
+		if nthBit(new.key, child.fdb) == 0 {
+			child = child.left
+		} else {
+			child = child.right
+		}
+	}
+
+	if nthBit(new.key, new.fdb) == 0 {
+		new.left = new
+		new.right = child
+	} else {
+		new.left = child
+		new.right = new
+	}
+
+	if nthBit(new.key, parent.fdb) == 0 {
+		parent.left = new
+	} else {
+		parent.right = new
+	}
 }
 
 func (n *node[T]) remove(key []byte) bool {
-	return false
+	found := n.getI(key)
+	if !bytes.Equal(found.key, key) {
+		return false
+	}
+
+	n.removeI(found)
+
+	return true
+}
+
+func (n *node[T]) removeI(old *node[T]) {
+	var (
+		grandparent = n
+		trueParent  = n
+		parent      = n
+		child       = n.left
+	)
+	for parent.fdb < child.fdb {
+		grandparent = parent
+
+		if child == old {
+			trueParent = parent
+		}
+
+		parent = child
+		if nthBit(old.key, child.fdb) == 0 {
+			child = child.left
+		} else {
+			child = child.right
+		}
+	}
+
+	var temp *node[T]
+	if child == parent {
+		if nthBit(old.key, child.fdb) == 0 {
+			temp = child.right
+		} else {
+			temp = child.left
+		}
+
+		if nthBit(old.key, trueParent.fdb) == 0 {
+			trueParent.left = temp
+		} else {
+			trueParent.right = temp
+		}
+	} else {
+		if nthBit(old.key, parent.fdb) == 0 {
+			temp = parent.right
+		} else {
+			temp = parent.left
+		}
+
+		if nthBit(old.key, grandparent.fdb) == 0 {
+			grandparent.left = temp
+		} else {
+			grandparent.right = temp
+		}
+
+		if nthBit(old.key, trueParent.fdb) == 0 {
+			trueParent.left = temp
+		} else {
+			trueParent.right = temp
+		}
+
+		parent.fdb = child.fdb
+		parent.left = child.left
+		parent.right = child.right
+	}
 }
 
 func nthBit(buf []byte, n int) byte {
