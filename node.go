@@ -124,6 +124,7 @@ func (n *node[T]) removeI(old *node[T]) {
 
 	var temp *node[T]
 	if child == parent {
+		// old must be an external node
 		if nthBit(old.key, child.fdb) == 0 {
 			temp = child.right
 		} else {
@@ -136,6 +137,7 @@ func (n *node[T]) removeI(old *node[T]) {
 			trueParent.right = temp
 		}
 	} else {
+		// old must be an internal node
 		if nthBit(old.key, parent.fdb) == 0 {
 			temp = parent.right
 		} else {
@@ -158,6 +160,29 @@ func (n *node[T]) removeI(old *node[T]) {
 		parent.left = child.left
 		parent.right = child.right
 	}
+}
+
+func (n *node[T]) visit(prefix []byte, f VisitFunc[T]) {
+	visitR(n, n, n.left, prefix, f)
+}
+
+func visitR[T any](root, parent, child *node[T], prefix []byte, f VisitFunc[T]) bool {
+	if child != root {
+		return false
+	}
+
+	if child.fdb <= parent.fdb {
+		// short-circuit evaluation for logical AND - we only apply
+		// f to the child if and only if its key begins with the prefix.
+		return bytes.HasPrefix(child.key, prefix) &&
+			f(child.key, child.value)
+	}
+
+	// short-circuit evaluation for logical OR - we only traverse
+	// the right subtree if and only if we have traversed the left
+	// subtree and no call to f has returned true.
+	return visitR(root, child, child.left, prefix, f) ||
+		visitR(root, child, child.right, prefix, f)
 }
 
 func nthBit(buf []byte, n int) byte {

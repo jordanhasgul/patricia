@@ -2,6 +2,8 @@ package patricia
 
 import "bytes"
 
+type VisitFunc[T any] func([]byte, T) bool
+
 type Tree[T any] struct {
 	root    *node[T]
 	rootSet bool
@@ -63,6 +65,16 @@ func (t *Tree[T]) Remove(key []byte) {
 	if t.root.remove(key) {
 		t.size--
 	}
+}
+
+func (t *Tree[T]) Visit(prefix []byte, f VisitFunc[T]) {
+	if t.rootSet && bytes.HasPrefix(t.root.key, prefix) {
+		if f(t.root.key, t.root.value) {
+			return
+		}
+	}
+
+	t.root.visit(prefix, f)
 }
 
 func (t *Tree[T]) Size() int {
