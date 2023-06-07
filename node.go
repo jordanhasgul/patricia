@@ -167,7 +167,7 @@ func (n *node[T]) visit(prefix []byte, f VisitFunc[T]) {
 }
 
 func visitR[T any](root, parent, child *node[T], prefix []byte, f VisitFunc[T]) bool {
-	if child != root {
+	if child == root {
 		return false
 	}
 
