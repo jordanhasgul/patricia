@@ -35,7 +35,7 @@ func New[T any]() *Tree[T] {
 // Get returns the value asssociated with the key and a boolean
 // indicating whether the key was present within the tree.
 //
-// Note: calls to Get are idempotent.
+// Note: successive calls to Get are idempotent.
 func (t *Tree[T]) Get(key []byte) (T, bool) {
 	if bytes.Equal(t.root.key, key) {
 		return t.root.value, t.rootSet
@@ -48,7 +48,7 @@ func (t *Tree[T]) Get(key []byte) (T, bool) {
 // the key was present within the tree, its associated value is
 // overwritten.
 //
-// Note: calls to Put are idempotent.
+// Note: successive calls to Put are idempotent.
 func (t *Tree[T]) Put(key []byte, value T) {
 	if bytes.Equal(t.root.key, key) {
 		t.root.value = value
@@ -64,9 +64,9 @@ func (t *Tree[T]) Put(key []byte, value T) {
 	}
 }
 
-// Remove deletes any association involving the key and a value.
+// Remove deletes any associations involving the key.
 //
-// Note: calls to Remove are idempotent.
+// Note: successive calls to Remove are idempotent.
 func (t *Tree[T]) Remove(key []byte) {
 	if bytes.Equal(t.root.key, key) {
 		t.root.value = *new(T)
@@ -84,11 +84,11 @@ func (t *Tree[T]) Remove(key []byte) {
 
 type VisitFunc[T any] func([]byte, T) bool
 
-// Visit traverses the tree in-order and applies f to any key-value
-// pairs whose key begins with the prefix.
+// Visit performs an in-order traversal of the tree, applying
+// f to those key-value pairs whose key begins with the prefix.
 //
-// The traversal terminates once f has returned true. Otherwise, it
-// terminates once every key-value pair has been visited.
+// The traversal terminates once f has returned true. Otherwise,
+// it terminates once every key-value pair has been visited.
 func (t *Tree[T]) Visit(prefix []byte, f VisitFunc[T]) {
 	if t.rootSet && bytes.HasPrefix(t.root.key, prefix) {
 		if f(t.root.key, t.root.value) {
@@ -99,7 +99,8 @@ func (t *Tree[T]) Visit(prefix []byte, f VisitFunc[T]) {
 	t.root.visit(prefix, f)
 }
 
-// Size returns the number of associations within the tree.
+// Size returns the number of key-value pairs present within
+// the tree.
 func (t *Tree[T]) Size() int {
 	return t.size
 }
