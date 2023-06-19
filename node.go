@@ -195,33 +195,22 @@ func nthBit(buf []byte, n int) byte {
 }
 
 func firstDifferingBit(buf1, buf2 []byte) int {
-	if len(buf1) == 0 && len(buf2) != 0 {
-		return bits.LeadingZeros8(buf2[0])
+	maxLen := len(buf1)
+	if len(buf2) > maxLen {
+		maxLen = len(buf2)
 	}
 
-	if len(buf1) != 0 && len(buf2) == 0 {
-		return bits.LeadingZeros8(buf1[0])
-	}
+	copyBuf1 := make([]byte, maxLen)
+	copy(copyBuf1, buf1)
 
-	n := len(buf1)
-	if len(buf2) > n {
-		n = len(buf2)
-	}
-
-	newBuf1 := make([]byte, n)
-	copy(newBuf1, buf1)
-
-	newBuf2 := make([]byte, n)
-	copy(newBuf2, buf2)
+	copyBuf2 := make([]byte, maxLen)
+	copy(copyBuf2, buf2)
 
 	var differingByte int
-	for idx := 0; idx < n; idx++ {
-		if newBuf1[idx] != newBuf2[idx] {
-			differingByte = idx
-			break
-		}
+	for copyBuf1[differingByte] == copyBuf2[differingByte] {
+		differingByte++
 	}
 
-	differingBit := newBuf1[differingByte] ^ newBuf2[differingByte]
+	differingBit := buf1[differingByte] ^ buf2[differingByte]
 	return 8*differingByte + bits.LeadingZeros8(differingBit)
 }
