@@ -7,8 +7,8 @@ import "bytes"
 // maintains a collection of key-value pairs of type []byte
 // and type T, respectively.
 type Tree[T any] struct {
-	root    *node[T]
-	rootSet bool
+	root   *node[T]
+	rooted bool
 
 	size int
 }
@@ -18,18 +18,11 @@ func New[T any]() *Tree[T] {
 	root := &node[T]{
 		key: []byte{},
 		fdb: -1,
-
-		value: *new(T),
 	}
 	root.left = root
 	root.right = nil
 
-	return &Tree[T]{
-		root:    root,
-		rootSet: false,
-
-		size: 0,
-	}
+	return &Tree[T]{root: root}
 }
 
 // Get returns the value asssociated with the key and a boolean
@@ -38,7 +31,7 @@ func New[T any]() *Tree[T] {
 // Note: successive calls to Get are idempotent.
 func (t *Tree[T]) Get(key []byte) (T, bool) {
 	if bytes.Equal(t.root.key, key) {
-		return t.root.value, t.rootSet
+		return t.root.value, t.rooted
 	}
 
 	return t.root.get(key)
@@ -52,8 +45,8 @@ func (t *Tree[T]) Get(key []byte) (T, bool) {
 func (t *Tree[T]) Put(key []byte, value T) {
 	if bytes.Equal(t.root.key, key) {
 		t.root.value = value
-		if !t.rootSet {
-			t.rootSet = true
+		if !t.rooted {
+			t.rooted = true
 			t.size++
 		}
 		return
@@ -70,8 +63,8 @@ func (t *Tree[T]) Put(key []byte, value T) {
 func (t *Tree[T]) Remove(key []byte) {
 	if bytes.Equal(t.root.key, key) {
 		t.root.value = *new(T)
-		if t.rootSet {
-			t.rootSet = false
+		if t.rooted {
+			t.rooted = false
 			t.size--
 		}
 		return
@@ -90,8 +83,8 @@ type VisitFunc[T any] func([]byte, T) bool
 // The traversal terminates once f has returned true. Otherwise,
 // it terminates once every key-value pair has been visited.
 func (t *Tree[T]) Visit(prefix []byte, f VisitFunc[T]) {
-	if t.rootSet && bytes.HasPrefix(t.root.key, prefix) {
-		if f(t.root.key, t.root.value) {
+	if bytes.Equal(t.root.key, prefix) {
+		if t.rooted && f(t.root.key, t.root.value) {
 			return
 		}
 	}
