@@ -200,17 +200,23 @@ func firstDifferingBit(buf1, buf2 []byte) int {
 		maxLen = len(buf2)
 	}
 
-	copyBuf1 := make([]byte, maxLen)
-	copy(copyBuf1, buf1)
+	tmp1 := buf1
+	if len(buf1) < maxLen {
+		tmp1 = make([]byte, maxLen)
+		copy(tmp1, buf1)
+	}
 
-	copyBuf2 := make([]byte, maxLen)
-	copy(copyBuf2, buf2)
+	tmp2 := buf2
+	if len(buf2) < maxLen {
+		tmp2 = make([]byte, maxLen)
+		copy(tmp2, buf2)
+	}
 
 	var differingByte int
-	for copyBuf1[differingByte] == copyBuf2[differingByte] {
+	for tmp1[differingByte] == tmp2[differingByte] {
 		differingByte++
 	}
 
-	differingBit := buf1[differingByte] ^ buf2[differingByte]
+	differingBit := tmp1[differingByte] ^ tmp2[differingByte]
 	return 8*differingByte + bits.LeadingZeros8(differingBit)
 }
