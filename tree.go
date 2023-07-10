@@ -75,21 +75,21 @@ func (t *Tree[T]) Remove(key []byte) {
 	}
 }
 
-type VisitFunc[T any] func([]byte, T) bool
+type WalkFunc[T any] func([]byte, T) bool
 
-// Visit performs an in-order traversal of the tree, applying
+// Walk performs an in-order traversal of the tree, applying
 // f to those key-value pairs whose key begins with the prefix.
 //
 // The traversal terminates once f has returned true. Otherwise,
-// it terminates once every key-value pair has been visited.
-func (t *Tree[T]) Visit(prefix []byte, f VisitFunc[T]) {
+// it terminates once f has been applied to each key-value pair.
+func (t *Tree[T]) Walk(prefix []byte, f WalkFunc[T]) {
 	if bytes.Equal(t.root.key, prefix) {
 		if t.rooted && f(t.root.key, t.root.value) {
 			return
 		}
 	}
 
-	t.root.visit(prefix, f)
+	t.root.walk(prefix, f)
 }
 
 // Size returns the number of key-value pairs present within

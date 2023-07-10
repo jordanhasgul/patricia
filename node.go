@@ -48,13 +48,16 @@ func (n *node[T]) put(key []byte, value T) bool {
 		return false
 	}
 
-	fdb := firstDifferingBit(found.key, key)
-	new := &node[T]{
-		key: key,
-		fdb: fdb,
+	var (
+		fdb = firstDifferingBit(found.key, key)
+		new = &node[T]{
+			key: key,
+			fdb: fdb,
 
-		value: value,
-	}
+			value: value,
+		}
+	)
+
 	n.putI(new)
 
 	return true
@@ -162,11 +165,11 @@ func (n *node[T]) removeI(old *node[T]) {
 	}
 }
 
-func (n *node[T]) visit(prefix []byte, f VisitFunc[T]) {
-	visitR(n, n, n.left, prefix, f)
+func (n *node[T]) walk(prefix []byte, f WalkFunc[T]) {
+	walkR(n, n, n.left, prefix, f)
 }
 
-func visitR[T any](root, parent, child *node[T], prefix []byte, f VisitFunc[T]) bool {
+func walkR[T any](root, parent, child *node[T], prefix []byte, f WalkFunc[T]) bool {
 	if child == root {
 		return false
 	}
@@ -181,8 +184,8 @@ func visitR[T any](root, parent, child *node[T], prefix []byte, f VisitFunc[T]) 
 	// short-circuit evaluation for logical OR - we only traverse
 	// the right subtree if and only if we have traversed the left
 	// subtree and no call to f has returned true.
-	return visitR(root, child, child.left, prefix, f) ||
-		visitR(root, child, child.right, prefix, f)
+	return walkR(root, child, child.left, prefix, f) ||
+		walkR(root, child, child.right, prefix, f)
 }
 
 func nthBit(buf []byte, n int) byte {
@@ -217,6 +220,8 @@ func firstDifferingBit(buf1, buf2 []byte) int {
 		differingByte++
 	}
 
-	differingBit := tmp1[differingByte] ^ tmp2[differingByte]
-	return 8*differingByte + bits.LeadingZeros8(differingBit)
+	differingBit := bits.LeadingZeros8(
+		tmp1[differingByte] ^ tmp2[differingByte],
+	)
+	return 8*differingByte + differingBit
 }
